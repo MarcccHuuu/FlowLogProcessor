@@ -3,6 +3,7 @@ package com.chris.processor;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.logging.Logger;
 
 /**
  * Handler Class for each executor in multi-thread.
@@ -14,6 +15,8 @@ import java.util.concurrent.ConcurrentHashMap;
  * @date 2/20/25
  */
 public class FlowLogHandler implements Runnable {
+
+    private static final Logger logger = Logger.getLogger(FlowLogHandler.class.getName());
 
     private final List<String> logBatch;
     private final Map<String, String> lookupTable;
@@ -46,6 +49,7 @@ public class FlowLogHandler implements Runnable {
         for (String line : logBatch) {
             String[] data = line.split(" ");
             if (data.length < 8) {
+                logger.warning(String.format("The line in log is not in the right format: %s", line));
                 continue;
             }
 
