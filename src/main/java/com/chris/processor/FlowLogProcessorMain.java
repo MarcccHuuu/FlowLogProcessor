@@ -7,11 +7,13 @@ import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * @Description:
- * @Author: hyc
- * @Date: 2/20/25
+ * Main Entrypoint Class to execute the flow log processor
+ *
+ * @author Chris
+ * @date 2/20/25
  */
 public class FlowLogProcessorMain {
 
@@ -22,12 +24,18 @@ public class FlowLogProcessorMain {
     public static void main(String[] args) {
         String flowLogFile = INPUT_FILE_FOLDER + "flow_logs.txt";
         String lookupFile = INPUT_FILE_FOLDER + "lookup_table.csv";
-        String tagCountOutputFile = OUTPUT_FILE_FOLDER+"tag_counts.csv";
-        String portProtocolCountOutputFile = OUTPUT_FILE_FOLDER+"port_protocol_counts.csv";
+        String tagCountOutputFile = OUTPUT_FILE_FOLDER + "tag_counts.csv";
+        String portProtocolCountOutputFile = OUTPUT_FILE_FOLDER + "port_protocol_counts.csv";
 
         try {
-            Map<String, String> lookUpTable = readLookupTable(lookupFile);
-            System.out.println(lookUpTable.size());
+            ConcurrentHashMap<String, String> lookupTable = new ConcurrentHashMap<>(readLookupTable(lookupFile));
+            List<String> flowLogLines = Files.readAllLines(Paths.get(flowLogFile));
+
+            ConcurrentHashMap<String, Integer> tagCounts = new ConcurrentHashMap<>();
+            ConcurrentHashMap<String, Integer> portProtocolCounts = new ConcurrentHashMap<>();
+
+            writeOutPutFile(tagCountOutputFile, tagCounts, "Tag,Count");
+            writeOutPutFile(portProtocolCountOutputFile, portProtocolCounts, "Port,Protocol,Count");
         } catch (IOException e) {
             e.printStackTrace();
         }
