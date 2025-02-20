@@ -1,4 +1,5 @@
 # Flow Log Processor (Multi-threaded)
+author: Chris(Yichuan) Hu
 
 ## Overview
 This project is a **multi-threaded** Java application that processes flow logs(TXT file), applies tag mappings from
