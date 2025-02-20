@@ -4,10 +4,14 @@ import java.io.BufferedWriter;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 
 /**
  * Main Entrypoint Class to execute the flow log processor
@@ -21,22 +25,53 @@ public class FlowLogProcessorMain {
 
     private static final String OUTPUT_FILE_FOLDER = "attachments/output/";
 
+    /**
+     * Main Method
+     *
+     *
+     */
     public static void main(String[] args) {
         String flowLogFile = INPUT_FILE_FOLDER + "flow_logs.txt";
         String lookupFile = INPUT_FILE_FOLDER + "lookup_table.csv";
         String tagCountOutputFile = OUTPUT_FILE_FOLDER + "tag_counts.csv";
         String portProtocolCountOutputFile = OUTPUT_FILE_FOLDER + "port_protocol_counts.csv";
 
+        int threadCount = 3;
+
         try {
+            // Read input files into buffer
             ConcurrentHashMap<String, String> lookupTable = new ConcurrentHashMap<>(readLookupTable(lookupFile));
             List<String> flowLogLines = Files.readAllLines(Paths.get(flowLogFile));
 
+            // Define the output data in thread-safe map
             ConcurrentHashMap<String, Integer> tagCounts = new ConcurrentHashMap<>();
             ConcurrentHashMap<String, Integer> portProtocolCounts = new ConcurrentHashMap<>();
 
+            // Create a fixed-size thread pool
+            ExecutorService executor = Executors.newFixedThreadPool(threadCount);
+            List<Future<?>> futures = new ArrayList<>();
+
+            // Divide log lines into batches for parallel processing
+            int batchSize = flowLogLines.size() / threadCount;
+            for (int i = 0; i < threadCount; i++) {
+                int start = i * batchSize;
+                int end = (i == threadCount - 1) ? flowLogLines.size() : (start + batchSize);
+                List<String> logBatch = flowLogLines.subList(start, end);
+
+                FlowLogHandler handler = new FlowLogHandler(logBatch, lookupTable, tagCounts, portProtocolCounts);
+                futures.add(executor.submit(handler));
+            }
+
+            // Wait for all tasks to complete and then shutdown
+            for (Future<?> future : futures) {
+                future.get();
+            }
+            executor.shutdown();
+
+            // Output the report data
             writeOutPutFile(tagCountOutputFile, tagCounts, "Tag,Count");
             writeOutPutFile(portProtocolCountOutputFile, portProtocolCounts, "Port,Protocol,Count");
-        } catch (IOException e) {
+        } catch (Exception e) {
             e.printStackTrace();
         }
     }
@@ -83,18 +118,4 @@ public class FlowLogProcessorMain {
         }
     }
 
-    /**
-     * Translate the digit in log to corresponding protocol
-     *
-     * @param number digit in the log entry
-     * @return result protocol
-     */
-    private static String translateProtocol(String number) {
-        return switch (number) {
-            case "6" -> "tcp";
-            case "17" -> "udp";
-            case "1" -> "icmp";
-            default -> null;
-        };
-    }
 }
