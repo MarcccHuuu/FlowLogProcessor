@@ -25,6 +25,13 @@ brew install maven
 - Input files: **flow_logs.txt** and **lookup_table.csv** in the same directory `attachments/input` under project path;
 - Output report files: **tag_counts_output.csv** and **port_protocol_counts_output** will be generated in the directory `attachments/output`under project path;
 
+### 3. Build And Run
+Run with the command after install maven:
+```
+mvn clean package
+java -jar target/FlowLogProcessor-1.0-SNAPSHOT.jar
+```
+
 ## Input Files
 - ### Flow Log File (flow_logs.txt)
 
@@ -36,13 +43,6 @@ Example:
 2 123456789012 eni-2d2e2f3g 192.168.2.7 77.88.55.80 49153 993 6 7 3500 1620140661 1620140721 ACCEPT OK
 
 2 123456789012 eni-4h5i6j7k 172.16.0.2 192.0.2.146 49154 143 6 9 4500 1620140661 1620140721 ACCEPT OK
-```
-
-### 3. Build And Run
-Run with the command after install maven:
-```
-mvn clean package
-java -jar target/FlowLogProcessor-1.0-SNAPSHOT.jar
 ```
 
 - ### Lookup Table File (lookup_table.csv)
@@ -60,7 +60,8 @@ dstport,protocol,tag
 
 ## Output Files
 - ### Tag Count Report (tag_counts.csv)
-This file summarizes occurrences of each tag matches in the log
+This file summarizes occurrences of each tag matches in the log.
+Since we use multi-thread, the output order of each entry might be different, but it's correct.
 
 Example:
 ```
@@ -90,6 +91,14 @@ Reads the flow logs and splits them among multiple threads.
 Extracts the data and use Map to categorize them into different protocols and tags.
 
 Store the data in Map and then push into the output report file.
+
+## Edge Cases
+### 1. File or Folder Not Exist: 
+will throw Exception and print out the error log
+### 2. Input File Not in the Right Format: 
+- Log file doesn't have enough length for each entry, will print out error log
+- Lookup Table doesn't have enough length for each entry, will print out error log
+- If log doesn't match any lookUp record, will be tagged with `Untagged`
 
 ## Multi-threading Optimization
 
