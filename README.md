@@ -15,6 +15,9 @@ Java - JDK 17
 Maven - for dependency management, introducing junit test module.
 
 Install them using Homebrew with command line:
+```
+brew install maven
+```
 
 ### 2.Placing Files
 
@@ -32,6 +35,13 @@ Example:
 2 123456789012 eni-2d2e2f3g 192.168.2.7 77.88.55.80 49153 993 6 7 3500 1620140661 1620140721 ACCEPT OK
 
 2 123456789012 eni-4h5i6j7k 172.16.0.2 192.0.2.146 49154 143 6 9 4500 1620140661 1620140721 ACCEPT OK
+```
+
+### 3. Build And Run
+Run with the command after install maven:
+```
+mvn clean package
+java -jar target/FlowLogProcessor-1.0-SNAPSHOT.jar
 ```
 
 - ### Lookup Table File (lookup_table.csv)
@@ -71,4 +81,20 @@ Port,Protocol,Count
 
 23,tcp,1
 ```
+
+## Basic Logic
+
+Reads the flow logs and splits them among multiple threads.
+
+Extracts the data and use Map to categorize them into different protocols and tags.
+
+Store the data in Map and then push into the output report file.
+
+## Multi-threading Optimization
+
+- Splits log files into batches for parallel processing.
+- Each thread processes a batch of log entries and matches tags based on looks up table.
+Stores results across threads using ConcurrentHashMap.
+- **Possible optimization in the future: multi-thread on reading the large log files, not load them all in memory**
+
 
